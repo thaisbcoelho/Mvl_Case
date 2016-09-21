@@ -1,0 +1,150 @@
+setwd("C:\\Users\\Thais\\Desktop")
+
+##install.packages("openxlsx")
+##install.packages("TTR")
+##install.packages("zoo")
+##install.packages("forecast")
+##install.packages("astsa")
+
+library(openxlsx)
+library(TTR)
+library(zoo)
+library(forecast)
+library(astsa)
+
+estudo_caso_1<-read.xlsx("Movile_RA_Test_Candidate.xlsx", sheet = 1, startRow = 1, colNames = TRUE,
+          rowNames = FALSE, detectDates = TRUE, skipEmptyRows = TRUE)
+
+estudo_caso_1<-data.frame(estudo_caso_1)
+
+estudo_caso_2<-read.xlsx("Movile_RA_Test_Candidate.xlsx", sheet = 2, startRow = 1, colNames = TRUE,
+                      rowNames = FALSE, skipEmptyRows = TRUE)
+
+estudo_caso_2<-data.frame(estudo_caso_2)
+
+
+####Estudo de Caso 1 - Item 1
+with(estudo_caso_1, plot(Day, Value, xaxt="n", type="l", xlab="Data", ylab="Valor (em R$)", main="Receita Diária"))
+axis.Date(1,at=seq(min(estudo_caso_1$Day), max(estudo_caso_1$Day),by="30 day"), format="%m-%Y")
+
+####Estudo de Caso 1 - Item 2
+aux<-summary(estudo_caso_1$Value)
+sd<-sd(estudo_caso_1$Value)
+descritivo<-c(aux,sd)
+names(descritivo)<-c("Mínimo", "1º Quartil", "Mediana", "Mean", "3º Quartil", "Máximo", "Desvio Padrão")
+descritivo
+
+####Estudo de Caso 1 - Item 3
+estudo_caso_1$Safra<-as.yearmon(estudo_caso_1$Day, "%Y %m")
+
+estudo_caso_1$Mes<-month(estudo_caso_1$Day)
+estudo_caso_1$Ano<-year(estudo_caso_1$Day)
+estudo_caso_1$Safra<-paste(estudo_caso_1$Ano,estudo_caso_1$Mes)
+
+estudo_caso_1<-estudo_caso_1[!(estudo_caso_1$Safra %in% c("2014 6", "2015 12")),]
+
+serie_1<-ts(estudo_caso_1$Value, frequency=21)
+plot(decompose(serie_1), xlab="Tempo", ylab="Elementos")
+
+####Estudo de Caso 1 - Item 4
+serie_1_EMA_90 <- EMA(serie_1,n=90)
+serie_1_EMA_60 <- EMA(serie_1,n=60)
+serie_1_EMA_30 <- EMA(serie_1,n=30)
+
+with(estudo_caso_1, plot(Day, Value, xaxt="n", type="l", xlab="Data", ylab="Valor (em R$)", main="Receita Diária"), ylim=c(40000,85000))
+axis.Date(1,at=seq(min(estudo_caso_1$Day), max(estudo_caso_1$Day),by="30 day"), format="%m-%Y")
+par(new=T)
+plot(serie_1_EMA_90, lty=1, col=2, lwd=1, xaxt="n", type ="l", xlab="", ylab="", xaxt="n", yaxt="n", ylim=c(40000,85000))
+par(new=T)
+plot(serie_1_EMA_60, lty=1, col=3, lwd=1, xaxt="n", type ="l", xlab="", ylab="", xaxt="n", yaxt="n", ylim=c(40000,85000))
+par(new=T)
+plot(serie_1_EMA_30, lty=1, col=4, lwd=1, xaxt="n", type ="l", xlab="", ylab="", xaxt="n", yaxt="n", ylim=c(40000,85000))
+legend(x=4, y=60000, legend=c("Observado", "EMA 90 Dias", "EMA 60 Dias", "EMA 30 Dias"), col=1:4, lty=1, cex=0.8)
+
+
+####Estudo de Caso 1 - Item 5
+serie_1_SMA_180 <- SMA(serie_1,n=180)
+serie_1_SMA_90 <- SMA(serie_1,n=90)
+serie_1_SMA_45 <- SMA(serie_1,n=45)
+
+
+with(estudo_caso_1, plot(Day, Value, xaxt="n", type="l", xlab="Data", ylab="Valor (em R$)", main="Receita Diária"), ylim=c(40000,85000))
+axis.Date(1,at=seq(min(estudo_caso_1$Day), max(estudo_caso_1$Day),by="30 day"), format="%m-%Y")
+par(new=T)
+plot(serie_1_SMA_180, lty=1, col=2, lwd=1, xaxt="n", type ="l", xlab="", ylab="", xaxt="n", yaxt="n",ylim=c(40000,85000))
+par(new=T)
+plot(serie_1_SMA_90, lty=1, col=3, lwd=1, xaxt="n", type ="l", xlab="", ylab="", xaxt="n", yaxt="n", ylim=c(40000,85000))
+par(new=T)
+plot(serie_1_SMA_45, lty=1, col=4, lwd=1, xaxt="n", type ="l", xlab="", ylab="", xaxt="n", yaxt="n", ylim=c(40000,85000))
+legend(x=4, y=60000, legend=c("Observado", "SMA 180 Dias", "SMA 90 Dias", "SMA 45 Dias"), col=1:4, lty=1, cex=0.8)
+
+####Estudo de Caso 1 - Item 6
+acf(serie_1)
+
+##A serie não é estacionária pois não apresenta decaimento exponencial na funcção de ACF.
+##Ou, porque a média muda em função do tempo.
+
+
+####Estudo de Caso 1 - Item 7
+###Os dados não apresentam nenhuma observação referente aos dias da semana de
+###terça-feira e quarta-feira. Por falta de conhecimento do comportamento e de informações
+###pertinentes para análise, não foram inferidos valores para as observações faltantes
+
+####Estudo de Caso 1 - Item 4 e 5
+##Existe a possibilidade de calcular a janela de média móvel bilateral e unilateral.
+##Como não foi especificado, usou-se unilateral (utilizando dados do passado para calcular a média móvel)
+
+
+
+#######Estudo de Caso 2
+
+with(estudo_caso_2, plot(Month, Value, type="l", xlab="Meses", ylab="Valor (em R$)", main="Receita Diária"))
+
+#Periodograma
+pgm <- function(serie)
+{ 
+  # baseado em SS, p 70
+  # para n/2 par
+  n <- length(serie)
+  m <- n/2 - 1
+  I <- abs(fft(serie)/sqrt(n))^2  # periodogram
+  P <- (4/n)*I                    # scaled-periodogram
+  f <- 0:m/n
+  list(f=f,P=P[1:(m+1)])
+}
+
+serie_3<-diff(serie_2)
+w<-serie_3
+n<-length(w)
+t<-1:n
+
+ten<-lm(w~t)
+dados1.1<-w-ten$fitted.values
+
+aux<-pgm(dados1.1)
+plot(aux$f,aux$P,type="l",xlab="frequência",ylab="")
+sort(aux$P)
+aux$f
+abline(v=1/12, lty="dotted")
+
+serie_2<-ts(estudo_caso_2$Value, frequency=12)
+
+dados_treino<-serie_2[1:120]
+
+auto.arima(serie_2)
+#ARIMA(1,0,1)(0,1,1)[12] with drift  
+auto.arima(dados_treino)
+##ARIMA(1,1,4)
+
+##Modelo Escolhido
+modelo_escolhido<-sarima(dados_treino,2,1,2,0,1,1,12)
+
+predicao<-sarima.for(dados_treino,24,2,1,2,0,1,1,12)
+
+plot(serie_2,ylim=c(24000,44000))
+par(new=T)
+plot(121:144,predicao$pred,xlim=c(0,144),ylim=c(24000,44000),type='l',col=2)
+
+predicao_final<-predicao$pred
+
+write.csv(predicao_final, file="predicao_final.csv")
